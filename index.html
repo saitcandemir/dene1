@@ -9,7 +9,7 @@
         .mic-btn { background: #4285f4; border: none; width: 90px; height: 90px; border-radius: 50%; color: white; font-size: 35px; cursor: pointer; transition: 0.3s; margin: 20px; }
         .mic-btn:active { transform: scale(0.9); background: #34a853; }
         #status { color: #f1c40f; font-size: 18px; margin-bottom: 10px; }
-        #response { background: #3d3d3d; padding: 20px; border-radius: 15px; margin-top: 20px; max-width: 400px; min-height: 50px; line-height: 1.5; }
+        #response { background: #3d3d3d; padding: 20px; border-radius: 15px; margin-top: 20px; max-width: 400px; min-height: 50px; line-height: 1.5; text-align: left; }
     </style>
 </head>
 <body>
@@ -22,7 +22,7 @@
 </div>
 
 <script>
-    // DİKKAT: Buraya kendi API anahtarını yapıştır!
+    // BURAYA API ANAHTARINI YAZ (Tırnaklar kalmalı)
     const API_KEY = 'AIzaSyChUn6h6F15AoWM1Huu2BgRVOQx0BEyuPw'; 
 
     const btn = document.getElementById('startBtn');
@@ -38,8 +38,20 @@
         recognition.lang = 'tr-TR';
 
         btn.onclick = () => {
-            recognition.start();
-            status.innerText = "Seni dinliyorum... Konuşabilirsin.";
+            try {
+                recognition.start();
+                status.innerText = "Seni dinliyorum... Konuşabilirsin.";
+            } catch (err) {
+                console.log("Mikrofon zaten açık.");
+            }
+        };
+
+        // Mikrofon hatası yakalama
+        recognition.onerror = (event) => {
+            status.innerText = "Hata oluştu: " + event.error;
+            if(event.error === 'not-allowed') {
+                alert("Mikrofon izni reddedildi. Lütfen tarayıcı ayarlarından izin ver!");
+            }
         };
 
         recognition.onresult = async (event) => {
@@ -55,17 +67,22 @@
                 });
 
                 const data = await res.json();
-                const aiMsg = data.candidates[0].content.parts[0].text;
-                responseDiv.innerText = aiMsg;
 
-                // Sesli Cevap (Konuşma)
-                const utter = new SpeechSynthesisUtterance(aiMsg);
-                utter.lang = 'tr-TR';
-                window.speechSynthesis.speak(utter);
-                status.innerText = "Cevap verildi. Tekrar konuşabilirsin.";
+                if (data.candidates && data.candidates[0]) {
+                    const aiMsg = data.candidates[0].content.parts[0].text;
+                    responseDiv.innerText = aiMsg;
+
+                    // Sesli Cevap
+                    const utter = new SpeechSynthesisUtterance(aiMsg);
+                    utter.lang = 'tr-TR';
+                    window.speechSynthesis.speak(utter);
+                    status.innerText = "Cevap verildi. Tekrar konuşabilirsin.";
+                } else {
+                    status.innerText = "API hatası! Anahtarını veya kotanı kontrol et.";
+                }
             } catch (err) {
-                status.innerText = "Hata! API anahtarı geçersiz veya bağlantı yok.";
-                responseDiv.innerText = "Lütfen API anahtarınızı kontrol edin.";
+                status.innerText = "Bağlantı hatası!";
+                responseDiv.innerText = "Hata detayı: " + err;
             }
         };
     }
