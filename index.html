@@ -1,10 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <title>Test Sayfası</title>
+    <meta charset="UTF-8">
+    <title>Ai Pazar Canlı</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; text-align: center; padding-top: 80px; }
+        .container { background: #2d2d2d; display: inline-block; padding: 40px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #4285f4; }
+        .mic-btn { background: #4285f4; border: none; width: 90px; height: 90px; border-radius: 50%; color: white; font-size: 35px; cursor: pointer; transition: 0.3s; margin: 20px; }
+        .mic-btn:active { transform: scale(0.9); background: #34a853; }
+        #status { color: #f1c40f; font-size: 18px; margin-bottom: 10px; }
+        #response { background: #3d3d3d; padding: 20px; border-radius: 15px; margin-top: 20px; max-width: 400px; min-height: 50px; line-height: 1.5; }
+    </style>
 </head>
-<body style="background: orange; text-align: center; padding: 50px;">
-    <h1>Eğer bu ekranı turuncu görüyorsan, BAŞARDIK!</h1>
-    <button onclick="alert('Sistem Çalışıyor!')" style="padding: 20px;">TIKLA BANA</button>
+<body>
+
+<div class="container">
+    <h1>🚀 Ai Pazar Gemini</h1>
+    <div id="status">Konuşmak için butona dokun</div>
+    <button id="startBtn" class="mic-btn">🎙️</button>
+    <div id="response">Cevaplar burada görünecek...</div>
+</div>
+
+<script>
+    // DİKKAT: Buraya kendi API anahtarını yapıştır!
+    const API_KEY = 'AIzaSyChUn6h6F15AoWM1Huu2BgRVOQx0BEyuPw'; 
+
+    const btn = document.getElementById('startBtn');
+    const status = document.getElementById('status');
+    const responseDiv = document.getElementById('response');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        status.innerText = "Hata: Tarayıcı desteklemiyor.";
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'tr-TR';
+
+        btn.onclick = () => {
+            recognition.start();
+            status.innerText = "Seni dinliyorum... Konuşabilirsin.";
+        };
+
+        recognition.onresult = async (event) => {
+            const text = event.results[0][0].transcript;
+            status.innerText = "Sen: " + text;
+            responseDiv.innerText = "Gemini düşünüyor...";
+
+            try {
+                const res = await fetch(https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: text }] }] })
+                });
+
+                const data = await res.json();
+                const aiMsg = data.candidates[0].content.parts[0].text;
+                responseDiv.innerText = aiMsg;
+
+                // Sesli Cevap (Konuşma)
+                const utter = new SpeechSynthesisUtterance(aiMsg);
+                utter.lang = 'tr-TR';
+                window.speechSynthesis.speak(utter);
+                status.innerText = "Cevap verildi. Tekrar konuşabilirsin.";
+            } catch (err) {
+                status.innerText = "Hata! API anahtarı geçersiz veya bağlantı yok.";
+                responseDiv.innerText = "Lütfen API anahtarınızı kontrol edin.";
+            }
+        };
+    }
+</script>
+
 </body>
 </html>
